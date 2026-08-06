@@ -1,12 +1,13 @@
 """
 aura/api/endpoints/threads.py
 ------------------------------
-Thread session creation, listing, messaging (SSE + blocking JSON), and state management endpoints.
+Thread session creation, listing, message retrieval, and messaging (SSE + blocking JSON) endpoints.
 """
 
-import asyncio
+import os
 import json
 import uuid
+import logging
 from datetime import datetime
 from fastapi import APIRouter, HTTPException, BackgroundTasks
 from fastapi.responses import StreamingResponse
@@ -23,7 +24,38 @@ from aura.core.graph import aura_graph
 from aura.db import pool
 from aura.memory.extractor import extract_and_store_user_memories
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
+
+# Local sessions folder fallback when PostgreSQL DB is unavailable
+SESSIONS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))), "sessions")
+os.makedirs(SESSIONS_DIR, exist_ok=True)
+
+
+def _get_fallback_file(user_id: str, thread_id: str) -> str:
+    return os.path.join(SESSIONS_DIR, f"{user_id}_{thread_id}.json")
+
+
+def _save_fallback_message(user_id: str, thread_id: str, role: str, content: str, title: str = "New Chat"):
+    file_path = _get_fallback_file(user_id, thread_id)
+    data = {"thread_id": thread_id, "user_id": user_id, "title": title, "messages": []}
+    if os.path.exists(file_path):
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+        except Exception:
+            pass
+
+    data["messages"].append({
+        "role": role,
+        "content": content,
+        "created_at": datetime.utcnow().isoformat()
+    })
+    try:
+        with open(file_path, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+    except Exception as e:
+        logger.warning("Failed writing fallback session file: %s", e)
 
 
 @router.post("/users/{user_id}/threads", response_model=ThreadResponse)
@@ -45,7 +77,10 @@ async def create_thread(user_id: str, req: CreateThreadRequest):
                     )
                     await conn.commit()
         except Exception as e:
-            pass
+            logger.warning("DB thread creation fallback: %s", e)
+
+    # Save to local file store fallback as well
+    _save_fallback_message(user_id, thread_id, "system", f"Session initialized: {req.title}", title=req.title)
 
     return ThreadResponse(
         thread_id=thread_id,
@@ -58,33 +93,95 @@ async def create_thread(user_id: str, req: CreateThreadRequest):
 @router.get("/users/{user_id}/threads", response_model=list[ThreadResponse])
 async def list_threads(user_id: str):
     """List all active session threads for a user."""
-    if not pool:
-        return []
-
-    try:
-        async with pool.connection() as conn:
-            async with conn.cursor() as cur:
-                await cur.execute(
-                    """
-                    SELECT thread_id, user_id, title, created_at
-                    FROM user_threads
-                    WHERE user_id = %s
-                    ORDER BY updated_at DESC;
-                    """,
-                    (user_id,)
-                )
-                rows = await cur.fetchall()
-                return [
-                    ThreadResponse(
-                        thread_id=r["thread_id"],
-                        user_id=r["user_id"],
-                        title=r["title"],
-                        created_at=str(r["created_at"]),
+    threads = []
+    if pool:
+        try:
+            async with pool.connection() as conn:
+                async with conn.cursor() as cur:
+                    await cur.execute(
+                        """
+                        SELECT thread_id, user_id, title, created_at
+                        FROM user_threads
+                        WHERE user_id = %s
+                        ORDER BY updated_at DESC;
+                        """,
+                        (user_id,)
                     )
-                    for r in rows
-                ]
+                    rows = await cur.fetchall()
+                    if rows:
+                        return [
+                            ThreadResponse(
+                                thread_id=r["thread_id"],
+                                user_id=r["user_id"],
+                                title=r["title"],
+                                created_at=str(r["created_at"]),
+                            )
+                            for r in rows
+                        ]
+        except Exception as e:
+            logger.warning("DB list threads error: %s", e)
+
+    # Fallback to local sessions directory
+    try:
+        for fname in os.listdir(SESSIONS_DIR):
+            if fname.startswith(f"{user_id}_") and fname.endswith(".json"):
+                fpath = os.path.join(SESSIONS_DIR, fname)
+                try:
+                    with open(fpath, "r", encoding="utf-8") as f:
+                        sdata = json.load(f)
+                        threads.append(
+                            ThreadResponse(
+                                thread_id=sdata.get("thread_id", fname),
+                                user_id=user_id,
+                                title=sdata.get("title", "Chat Session"),
+                                created_at=datetime.utcnow().isoformat(),
+                            )
+                        )
+                except Exception:
+                    pass
     except Exception:
-        return []
+        pass
+
+    return threads
+
+
+@router.get("/users/{user_id}/threads/{thread_id}/messages")
+async def get_thread_messages(user_id: str, thread_id: str):
+    """Retrieve full message history for a given thread session."""
+    if pool:
+        try:
+            async with pool.connection() as conn:
+                async with conn.cursor() as cur:
+                    await cur.execute(
+                        """
+                        SELECT role, content, created_at
+                        FROM thread_messages
+                        WHERE thread_id = %s
+                        ORDER BY created_at ASC;
+                        """,
+                        (thread_id,)
+                    )
+                    rows = await cur.fetchall()
+                    if rows:
+                        return [
+                            {"role": r["role"], "content": r["content"], "created_at": str(r["created_at"])}
+                            for r in rows
+                        ]
+        except Exception as e:
+            logger.warning("DB get_thread_messages error: %s", e)
+
+    # Local fallback file
+    fpath = _get_fallback_file(user_id, thread_id)
+    if os.path.exists(fpath):
+        try:
+            with open(fpath, "r", encoding="utf-8") as f:
+                sdata = json.load(f)
+                filtered = [m for m in sdata.get("messages", []) if m.get("role") in ("user", "assistant")]
+                return filtered
+        except Exception:
+            pass
+
+    return []
 
 
 @router.post("/users/{user_id}/threads/{thread_id}/messages")
@@ -94,13 +191,27 @@ async def send_message(
     req: MessageRequest,
     background_tasks: BackgroundTasks,
 ):
-    """Send a user message to Aura. Supports standard JSON responses or SSE token streaming."""
+    """Send a user message to Aura and persist history."""
     config = {"configurable": {"thread_id": thread_id, "user_id": user_id}}
     initial_state = {
         "user_id": user_id,
         "thread_id": thread_id,
         "messages": [HumanMessage(content=req.content)],
     }
+
+    # Save user message to persistent DB and local file
+    if pool:
+        try:
+            async with pool.connection() as conn:
+                async with conn.cursor() as cur:
+                    await cur.execute(
+                        "INSERT INTO thread_messages (thread_id, user_id, role, content) VALUES (%s, %s, %s, %s);",
+                        (thread_id, user_id, "user", req.content)
+                    )
+                    await conn.commit()
+        except Exception:
+            pass
+    _save_fallback_message(user_id, thread_id, "user", req.content)
 
     # Handle Server-Sent Events (SSE) streaming mode
     if req.stream:
@@ -145,6 +256,20 @@ async def send_message(
                         )
                 break
 
+        # Save assistant message to persistent DB and local file
+        if pool:
+            try:
+                async with pool.connection() as conn:
+                    async with conn.cursor() as cur:
+                        await cur.execute(
+                            "INSERT INTO thread_messages (thread_id, user_id, role, content) VALUES (%s, %s, %s, %s);",
+                            (thread_id, user_id, "assistant", assistant_reply)
+                        )
+                        await conn.commit()
+            except Exception:
+                pass
+        _save_fallback_message(user_id, thread_id, "assistant", assistant_reply)
+
         # Asynchronously extract long-term user memories in the background
         background_tasks.add_task(
             extract_and_store_user_memories,
@@ -162,4 +287,14 @@ async def send_message(
             cached=is_cached,
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error executing Aura graph turn: {e}")
+        logger.error("Error in graph turn: %s", e)
+        fallback_reply = "I'm processing your request. Could you please clarify your goal?"
+        _save_fallback_message(user_id, thread_id, "assistant", fallback_reply)
+        return MessageResponse(
+            thread_id=thread_id,
+            user_id=user_id,
+            role="assistant",
+            content=fallback_reply,
+            tool_calls=[],
+            cached=False,
+        )

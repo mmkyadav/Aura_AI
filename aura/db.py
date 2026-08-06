@@ -70,6 +70,19 @@ async def init_db() -> None:
                 CREATE INDEX IF NOT EXISTS idx_user_threads_user_id ON user_threads(user_id);
             """)
 
+            # 5. Table: thread_messages (Permanent Conversation Messages History)
+            await cur.execute("""
+                CREATE TABLE IF NOT EXISTS thread_messages (
+                    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                    thread_id VARCHAR(255) NOT NULL,
+                    user_id VARCHAR(255) NOT NULL,
+                    role VARCHAR(50) NOT NULL,
+                    content TEXT NOT NULL,
+                    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+                );
+                CREATE INDEX IF NOT EXISTS idx_thread_messages_thread_id ON thread_messages(thread_id);
+            """)
+
             await conn.commit()
             logger.info("Database schema and pgvector extension initialized successfully.")
 

@@ -13,15 +13,17 @@ import './App.css';
 const API_BASE = 'http://localhost:8000/api/v1';
 
 export default function App() {
-  // ── Auth & State ────────────────────────────────────────────────────────────
+  // ── Auth & Mode State ──────────────────────────────────────────────────────
+  const [authMode, setAuthMode] = useState('signin'); // 'signin' or 'signup'
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userName, setUserName] = useState('');
   const [email, setEmail] = useState('user_default@example.com');
   const [password, setPassword] = useState('••••••••');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
 
   // ── Chat & Thread State ─────────────────────────────────────────────────────
-  const userId = email.split('@')[0] || 'user_default';
+  const userId = (email.split('@')[0] || 'user_default').replace(/[^a-zA-Z0-9_]/g, '');
   const [threads, setThreads] = useState([]);
   const [activeThreadId, setActiveThreadId] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -31,10 +33,10 @@ export default function App() {
   const messagesEndRef = useRef(null);
 
   const suggestionPills = [
+    'What is the weather in Hyderabad?',
     'Explain a hard idea in plain words',
     'Help me plan my week',
-    'Rewrite this to sound more human',
-    'Brainstorm names for a side project'
+    'Calculate 25 * 4 + 15'
   ];
 
   // ── Fetch User Threads on Login ──────────────────────────────────────────────
@@ -61,8 +63,8 @@ export default function App() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isLoading]);
 
-  // ── Auth Handler ─────────────────────────────────────────────────────────────
-  const handleLoginSubmit = (e) => {
+  // ── Auth Handlers ─────────────────────────────────────────────────────────────
+  const handleAuthSubmit = (e) => {
     e.preventDefault();
     if (email.trim()) {
       setIsLoggedIn(true);
@@ -76,15 +78,28 @@ export default function App() {
   };
 
   // ── Create New Chat Session ──────────────────────────────────────────────────
-  const handleNewChat = async () => {
+  const handleNewChat = () => {
     setActiveThreadId(null);
     setMessages([]);
     setInputText('');
   };
 
-  const selectThread = (thread) => {
+  // ── Select Thread & Load Saved Messages History ──────────────────────────────
+  const selectThread = async (thread) => {
     setActiveThreadId(thread.thread_id);
-    // Render existing thread messages or placeholder
+    try {
+      const res = await fetch(`${API_BASE}/users/${userId}/threads/${thread.thread_id}/messages`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.length > 0) {
+          setMessages(data);
+          return;
+        }
+      }
+    } catch (err) {
+      console.warn('Could not fetch saved thread messages:', err);
+    }
+    // Fallback if no messages returned
     setMessages([
       { role: 'user', content: thread.title },
       { role: 'assistant', content: `Continuing session '${thread.title}'. How can I help you further?` }
@@ -137,6 +152,7 @@ export default function App() {
           ...prev,
           { role: 'assistant', content: data.content || 'Response generated.' }
         ]);
+        fetchThreads(); // Refresh thread list in sidebar
       } else {
         setMessages((prev) => [
           ...prev,
@@ -158,7 +174,7 @@ export default function App() {
   };
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // RENDER: LOGIN VIEW (IMAGE 1)
+  // RENDER: AUTH VIEW (LOGIN & SIGN UP)
   // ─────────────────────────────────────────────────────────────────────────────
   if (!isLoggedIn) {
     return (
@@ -169,10 +185,32 @@ export default function App() {
             <span>AURA</span>
           </div>
 
-          <h1 className="login-title">Welcome back.</h1>
-          <p className="login-subtitle">Sign in to pick up your threads where you left them.</p>
+          <h1 className="login-title">
+            {authMode === 'signin' ? 'Welcome back.' : 'Create an account.'}
+          </h1>
+          <p className="login-subtitle">
+            {authMode === 'signin' 
+              ? 'Sign in to pick up your threads where you left them.'
+              : 'Start your journey with Aura today.'}
+          </p>
 
-          <form onSubmit={handleLoginSubmit} className="login-form">
+          <form onSubmit={handleAuthSubmit} className="login-form">
+            {authMode === 'signup' && (
+              <div className="form-group">
+                <label className="form-label">Full Name</label>
+                <div className="input-wrapper">
+                  <input 
+                    type="text" 
+                    className="form-input" 
+                    value={userName}
+                    onChange={(e) => setUserName(e.target.value)}
+                    placeholder="Your full name"
+                    required
+                  />
+                </div>
+              </div>
+            )}
+
             <div className="form-group">
               <label className="form-label">Email</label>
               <div className="input-wrapper">
@@ -208,21 +246,23 @@ export default function App() {
               </div>
             </div>
 
-            <div className="form-options">
-              <label className="checkbox-label">
-                <input 
-                  type="checkbox" 
-                  className="checkbox-input"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                />
-                <span>Remember me</span>
-              </label>
-              <a href="#forgot" className="forgot-link">Forgot password?</a>
-            </div>
+            {authMode === 'signin' && (
+              <div className="form-options">
+                <label className="checkbox-label">
+                  <input 
+                    type="checkbox" 
+                    className="checkbox-input"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                  />
+                  <span>Remember me</span>
+                </label>
+                <a href="#forgot" className="forgot-link">Forgot password?</a>
+              </div>
+            )}
 
             <button type="submit" className="btn-primary">
-              <span>Continue</span>
+              <span>{authMode === 'signin' ? 'Continue' : 'Create Account'}</span>
               <ArrowRight size={18} />
             </button>
           </form>
@@ -243,8 +283,17 @@ export default function App() {
           </div>
 
           <div className="login-footer">
-            <span>New here? </span>
-            <span className="signup-link" onClick={() => setIsLoggedIn(true)}>Create an account</span>
+            {authMode === 'signin' ? (
+              <>
+                <span>New here? </span>
+                <span className="signup-link" onClick={() => setAuthMode('signup')}>Create an account</span>
+              </>
+            ) : (
+              <>
+                <span>Already have an account? </span>
+                <span className="signup-link" onClick={() => setAuthMode('signin')}>Sign in</span>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -252,13 +301,12 @@ export default function App() {
   }
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // RENDER: CHAT WORKSPACE VIEW (IMAGES 2 & 3)
+  // RENDER: CHAT WORKSPACE VIEW
   // ─────────────────────────────────────────────────────────────────────────────
   return (
     <div className="app-container font-sans">
       {/* ── LEFT SIDEBAR ──────────────────────────────────────────────────── */}
       <aside className="sidebar">
-        {/* User explicitly requested: 'L' badge changed to 'A' badge! */}
         <div className="sidebar-header">
           <div className="aura-badge">A</div>
           <span className="aura-logo-text">Aura</span>
@@ -301,7 +349,7 @@ export default function App() {
       {/* ── MAIN WORKSPACE ────────────────────────────────────────────────── */}
       <main className="main-workspace">
         {messages.length === 0 ? (
-          /* EMPTY STATE VIEW (IMAGE 2) */
+          /* EMPTY STATE VIEW */
           <div className="empty-state-view">
             <div className="session-ready-tag">
               <span className="brand-dot"></span>
@@ -347,7 +395,7 @@ export default function App() {
             </div>
           </div>
         ) : (
-          /* ACTIVE CONVERSATION VIEW (IMAGE 3) */
+          /* ACTIVE CONVERSATION VIEW */
           <div className="active-chat-view">
             <div className="chat-header">
               <span className="brand-dot"></span>
