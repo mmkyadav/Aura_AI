@@ -320,9 +320,14 @@ async def record_feedback(
                         """,
                         (thread_id, user_id, req.message_index, req.rating, req.feedback_text)
                     )
+                    
+                    # If user dislikes response, purge potentially inaccurate cache entry
+                    if req.rating == "thumbs_down":
+                        await cur.execute("DELETE FROM semantic_cache WHERE created_at < NOW();")
+                        
                     await conn.commit()
         except Exception as e:
             logger.warning("Failed to store feedback in DB: %s", e)
 
-    logger.info("Feedback recorded for user %s thread %s: %s", user_id, thread_id, req.rating)
+    logger.info("Feedback recorded for user %s thread %s: %s (%s)", user_id, thread_id, req.rating, req.feedback_text)
     return FeedbackResponse(status="success", thread_id=thread_id, rating=req.rating)

@@ -44,6 +44,7 @@ const FormattedMessage = ({ content }) => {
 const AssistantActionBar = ({ content, messageIndex, userId, threadId, onRetry, isLatest, isLoading }) => {
   const [copied, setCopied] = useState(false);
   const [rating, setRating] = useState(null); // 'thumbs_up' | 'thumbs_down' | null
+  const [feedbackCategory, setFeedbackCategory] = useState('');
 
   const handleCopy = () => {
     if (content) {
@@ -53,9 +54,10 @@ const AssistantActionBar = ({ content, messageIndex, userId, threadId, onRetry, 
     }
   };
 
-  const handleFeedback = async (selectedRating) => {
-    const newRating = rating === selectedRating ? null : selectedRating;
+  const handleFeedback = async (selectedRating, category = '') => {
+    const newRating = rating === selectedRating && !category ? null : selectedRating;
     setRating(newRating);
+    if (category) setFeedbackCategory(category);
 
     if (newRating && userId && threadId) {
       try {
@@ -65,6 +67,7 @@ const AssistantActionBar = ({ content, messageIndex, userId, threadId, onRetry, 
           body: JSON.stringify({
             message_index: messageIndex,
             rating: newRating,
+            feedback_text: category || feedbackCategory,
           }),
         });
       } catch (err) {
@@ -74,42 +77,59 @@ const AssistantActionBar = ({ content, messageIndex, userId, threadId, onRetry, 
   };
 
   return (
-    <div className="action-bar font-sans">
-      <button 
-        className={`action-btn ${copied ? 'active-mint' : ''}`} 
-        onClick={handleCopy} 
-        title={copied ? "Copied!" : "Copy response"}
-      >
-        {copied ? <Check size={14} /> : <Copy size={14} />}
-        {copied && <span className="action-label">Copied</span>}
-      </button>
-
-      <button 
-        className={`action-btn ${rating === 'thumbs_up' ? 'active-mint' : ''}`} 
-        onClick={() => handleFeedback('thumbs_up')} 
-        title="Good response"
-      >
-        <ThumbsUp size={14} />
-      </button>
-
-      <button 
-        className={`action-btn ${rating === 'thumbs_down' ? 'active-red' : ''}`} 
-        onClick={() => handleFeedback('thumbs_down')} 
-        title="Poor response"
-      >
-        <ThumbsDown size={14} />
-      </button>
-
-      {onRetry && (
+    <div className="action-bar-wrapper">
+      <div className="action-bar font-sans">
         <button 
-          className="action-btn retry-btn" 
-          onClick={onRetry} 
-          disabled={isLoading}
-          title="Regenerate response"
+          className={`action-btn ${copied ? 'active-mint' : ''}`} 
+          onClick={handleCopy} 
+          title={copied ? "Copied!" : "Copy response"}
         >
-          <RotateCcw size={14} className={isLoading ? "spin" : ""} />
-          <span className="action-label">Retry</span>
+          {copied ? <Check size={14} /> : <Copy size={14} />}
+          {copied && <span className="action-label">Copied</span>}
         </button>
+
+        <button 
+          className={`action-btn ${rating === 'thumbs_up' ? 'active-mint' : ''}`} 
+          onClick={() => handleFeedback('thumbs_up')} 
+          title="Good response"
+        >
+          <ThumbsUp size={14} />
+        </button>
+
+        <button 
+          className={`action-btn ${rating === 'thumbs_down' ? 'active-red' : ''}`} 
+          onClick={() => handleFeedback('thumbs_down')} 
+          title="Poor response"
+        >
+          <ThumbsDown size={14} />
+        </button>
+
+        {onRetry && (
+          <button 
+            className={`action-btn retry-btn ${rating === 'thumbs_down' ? 'highlight-retry' : ''}`} 
+            onClick={onRetry} 
+            disabled={isLoading}
+            title="Regenerate response"
+          >
+            <RotateCcw size={14} className={isLoading ? "spin" : ""} />
+            <span className="action-label">Try again</span>
+          </button>
+        )}
+      </div>
+
+      {rating === 'thumbs_down' && (
+        <div className="dislike-feedback-pills">
+          <span className="dislike-prompt">What went wrong?</span>
+          {['Inaccurate info', 'Didn\'t follow prompt', 'Bad formatting'].map((cat) => (
+            <button 
+              key={cat} 
+              className={`dislike-chip ${feedbackCategory === cat ? 'selected' : ''}`}
+              onClick={() => handleFeedback('thumbs_down', cat)}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
       )}
     </div>
   );
