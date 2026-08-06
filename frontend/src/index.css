@@ -1,0 +1,84 @@
+/* Aura Theme & Global CSS */
+:root {
+  --bg-dark: #061319;
+  --bg-sidebar: #050E13;
+  --bg-card: #0B212C;
+  --bg-card-hover: #0E2937;
+  --border-color: #143747;
+  --border-subtle: #0F2833;
+  
+  --mint-primary: #14E79D;
+  --mint-hover: #1BEBA5;
+  --mint-dark: #0B3326;
+  --mint-glow: rgba(20, 231, 157, 0.15);
+  
+  --text-main: #FFFFFF;
+  --text-secondary: #8BA4B2;
+  --text-muted: #577382;
+
+  --font-serif: 'Newsreader', Georgia, serif;
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg-dark);
+  color: var(--text-main);
+  font-family: var(--font-sans);
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  background-image: 
+    linear-gradient(to right, rgba(20, 231, 157, 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(20, 231, 157, 0.03) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-dark);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--mint-primary);
+}
+
+/* Typography Utilities */
+.font-serif {
+  font-family: var(--font-serif);
+}
+
+.font-sans {
+  font-family: var(--font-sans);
+}
+
+/* Button & Card animations */
+button {
+  cursor: pointer;
+  border: none;
+  outline: none;
+  font-family: var(--font-sans);
+  transition: all 0.2s ease;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+input {
+  font-family: var(--font-sans);
+  outline: none;
+}
