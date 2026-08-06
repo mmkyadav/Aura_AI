@@ -1,0 +1,52 @@
+{
+  "thread_id": "2e82b50a-f13d-47d9-a0eb-e5cd0ed32bed",
+  "user_id": "user_default",
+  "title": "What is rajnikanths latest mov",
+  "messages": [
+    {
+      "role": "system",
+      "content": "Session initialized: What is rajnikanths latest mov",
+      "created_at": "2026-08-06T07:20:45.465036"
+    },
+    {
+      "role": "user",
+      "content": "What is rajnikanths latest movie",
+      "created_at": "2026-08-06T07:20:45.508333"
+    },
+    {
+      "role": "assistant",
+      "content": "Rajinikanth's latest movie is titled **\"Jailer,\"** which was released in 2023. In this action-comedy film, he plays the role of a retired jailer who embarks on a mission to apprehend an eccentric idol smuggler. The film has received positive reviews and showcases Rajinikanth's signature style and charisma. If you're interested in more details about the movie or its plot, feel free to ask!",
+      "created_at": "2026-08-06T07:20:51.752107"
+    },
+    {
+      "role": "user",
+      "content": "isnt it coolie",
+      "created_at": "2026-08-06T07:21:45.720855"
+    },
+    {
+      "role": "assistant",
+      "content": "It seems there might be some confusion. \"Coolie\" is actually a film that is set to be released in 2025, while \"Jailer\" is Rajinikanth's latest movie that came out in 2023. \"Coolie\" will be Rajinikanth's 169th film, whereas \"Jailer\" is his 170th. If you have any specific questions about either film or need more information, just let me know!",
+      "created_at": "2026-08-06T07:21:54.676979"
+    },
+    {
+      "role": "user",
+      "content": "what is todays date",
+      "created_at": "2026-08-06T07:22:10.561096"
+    },
+    {
+      "role": "assistant",
+      "content": "Today's date is October 4, 2023. If you need any more information or assistance, feel free to ask!",
+      "created_at": "2026-08-06T07:22:12.115693"
+    },
+    {
+      "role": "user",
+      "content": "no today is 6 aug 2026",
+      "created_at": "2026-08-06T07:22:27.829629"
+    },
+    {
+      "role": "assistant",
+      "content": "Thank you for the correction! Today is indeed August 6, 2026. If there's anything specific you'd like to know or discuss, just let me know!",
+      "created_at": "2026-08-06T07:22:29.617287"
+    }
+  ]
+}

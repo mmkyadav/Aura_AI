@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import ReactMarkdown from 'react-markdown';
 import { 
   Eye, 
   EyeOff, 
@@ -11,6 +12,28 @@ import {
 import './App.css';
 
 const API_BASE = 'http://localhost:8000/api/v1';
+
+// Helper component to sanitize raw LaTeX and render beautiful Markdown
+const FormattedMessage = ({ content }) => {
+  if (!content) return null;
+
+  // Clean raw LaTeX delimiters and operators for sleek readability
+  let cleaned = content
+    .replace(/\\\[\s*/g, '\n')
+    .replace(/\s*\\\]/g, '\n')
+    .replace(/\\\(\s*/g, '')
+    .replace(/\s*\\\)/g, '')
+    .replace(/\\times/g, '×')
+    .replace(/\\div/g, '÷')
+    .replace(/\\cdot/g, '·')
+    .replace(/\\approx/g, '≈');
+
+  return (
+    <div className="markdown-content">
+      <ReactMarkdown>{cleaned}</ReactMarkdown>
+    </div>
+  );
+};
 
 export default function App() {
   // ── Auth & Mode State ──────────────────────────────────────────────────────
@@ -33,10 +56,10 @@ export default function App() {
   const messagesEndRef = useRef(null);
 
   const suggestionPills = [
-    'What is the weather in Hyderabad?',
-    'Explain a hard idea in plain words',
-    'Help me plan my week',
-    'Calculate 25 * 4 + 15'
+    'What is Rajinikanth\'s latest movie?',
+    'What is today\'s date?',
+    'Calculate total cost for 4 shirts at $24.50 and shoes at $89.99 plus 8% tax',
+    'What is the weather in Hyderabad?'
   ];
 
   // ── Fetch User Threads on Login ──────────────────────────────────────────────
@@ -156,16 +179,15 @@ export default function App() {
       } else {
         setMessages((prev) => [
           ...prev,
-          { role: 'assistant', content: 'Good question. There are usually three angles worth checking — what you want to be true, what\'s actually true today, and the cheapest experiment that tells the difference.' }
+          { role: 'assistant', content: 'Good question. Let me process that for you.' }
         ]);
       }
     } catch (err) {
-      // Fallback demo response if backend is offline
       setMessages((prev) => [
         ...prev,
         { 
           role: 'assistant', 
-          content: 'Here\'s how I\'d think about it: start from the smallest version that already works, then let the rest grow around it. Constraints tend to make the shape obvious.\n\nWant me to sketch a concrete first step?' 
+          content: 'I\'m processing your request. Start from the smallest version that already works, then let the rest grow around it.' 
         }
       ]);
     } finally {
@@ -413,7 +435,9 @@ export default function App() {
                         <span className="assistant-dash">—</span>
                         <span>AURA</span>
                       </div>
-                      <div className="message-text-assistant">{m.content}</div>
+                      <div className="message-text-assistant">
+                        <FormattedMessage content={m.content} />
+                      </div>
                     </>
                   )}
                 </div>

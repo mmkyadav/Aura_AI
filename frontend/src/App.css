@@ -589,9 +589,48 @@
 .message-text-assistant {
   color: var(--text-main);
   font-size: 0.95rem;
-  line-height: 1.6;
-  white-space: pre-wrap;
+  line-height: 1.65;
   max-width: 90%;
+}
+
+.markdown-content p {
+  margin-bottom: 0.75rem;
+}
+
+.markdown-content p:last-child {
+  margin-bottom: 0;
+}
+
+.markdown-content strong {
+  color: var(--mint-primary);
+  font-weight: 600;
+}
+
+.markdown-content ul, .markdown-content ol {
+  margin: 0.5rem 0 0.75rem 1.25rem;
+}
+
+.markdown-content li {
+  margin-bottom: 0.35rem;
+}
+
+.markdown-content code {
+  background-color: #071D27;
+  border: 1px solid #143C4E;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 0.88rem;
+  color: var(--mint-primary);
+}
+
+.markdown-content pre {
+  background-color: #071D27;
+  border: 1px solid #143C4E;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 0.75rem 0;
 }
 
 .chat-footer-input {

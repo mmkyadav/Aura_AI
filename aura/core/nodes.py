@@ -6,6 +6,7 @@ Graph nodes for Aura's LangGraph workflow.
 
 import json
 import logging
+from datetime import datetime
 from langchain_core.messages import SystemMessage, AIMessage, ToolMessage, HumanMessage
 from aura.core.state import AuraState
 from aura.core.llm_factory import get_resilient_llm
@@ -15,20 +16,27 @@ from aura.tools.base import TOOL_REGISTRY, get_all_tools
 
 logger = logging.getLogger(__name__)
 
-# Base system instructions
-SYSTEM_PROMPT_TEMPLATE = """You are Aura, an intelligent, empathetic, and highly context-aware AI assistant.
-Your goal is to act as a personal digital companion.
+SYSTEM_PROMPT_TEMPLATE = """You are Aura, an intelligent, empathetic, and highly context-aware AI companion.
 
-Known facts about the user:
+Contextual Information:
+- Current Date & Time: {current_date}
+- Known facts about the user:
 {user_facts_block}
 
-Instructions:
-1. Use your own knowledge first when questions can be answered accurately.
-2. Refer to previous messages in this conversation history naturally.
-3. If an answer requires live or real-time data, use the available tools.
-4. If a user request is missing essential information or is highly ambiguous, respond with a clarifying question instead of making unfounded assumptions.
-5. Never output raw tool output JSON to the user. Always synthesize information into clean, clear, natural language.
+Tool Usage & Live Data Policy (CRITICAL):
+1. LIVE DATA & RECENT EVENTS: For ANY query asking about current, live, or recent events (e.g., latest movies, new releases, current news, sports updates, breaking updates, or queries about today's date), you MUST invoke the `google_search` tool to retrieve accurate live information. Do NOT attempt to answer from static pre-trained memory.
+2. WEATHER LOOKUPS: Use `fetch_weather` (or `weather`) tool whenever the user asks for current weather conditions.
+3. MATHEMATICAL CALCULATIONS: Use the `calculate` tool for non-trivial math operations. Format mathematical steps cleanly using standard Markdown / math text without raw LaTeX delimiters like `\\(` or `\\[`.
+4. CONVERSATIONAL CONTEXT: Refer to previous messages naturally.
+5. AMBIGUITY: If a user request is missing key information, ask a friendly clarification question.
+6. RESPONSE SYNTHESIS: Never expose raw tool output JSON to the user. Synthesize tool results into clean, beautifully formatted Markdown.
 """
+
+
+def _get_system_prompt(user_facts: list[str]) -> str:
+    now_str = datetime.now().strftime("%B %d, %Y (%A)")
+    facts_block = "\n".join(f"- {f}" for f in user_facts) if user_facts else "- No specific personal facts stored yet."
+    return SYSTEM_PROMPT_TEMPLATE.format(current_date=now_str, user_facts_block=facts_block)
 
 
 async def cache_check_node(state: AuraState) -> dict:
@@ -60,13 +68,11 @@ async def fact_retriever_node(state: AuraState) -> dict:
 
 async def router_node(state: AuraState) -> dict:
     """Node 3: Core LLM Router - Evaluates intent, decides tools, or requests clarification."""
-    # If semantic cache hit, return cached AI message directly
     if state.get("cached_response"):
         return {"messages": [AIMessage(content=state["cached_response"])]}
 
     user_facts = state.get("user_memories", [])
-    facts_block = "\n".join(f"- {f}" for f in user_facts) if user_facts else "- No specific personal facts stored yet."
-    system_prompt = SYSTEM_PROMPT_TEMPLATE.format(user_facts_block=facts_block)
+    system_prompt = _get_system_prompt(user_facts)
 
     full_messages = [SystemMessage(content=system_prompt)] + list(state["messages"])
 
@@ -116,8 +122,7 @@ async def tool_execution_node(state: AuraState) -> dict:
 async def synthesizer_node(state: AuraState) -> dict:
     """Node 5: Synthesize raw tool outputs into a natural language assistant reply."""
     user_facts = state.get("user_memories", [])
-    facts_block = "\n".join(f"- {f}" for f in user_facts) if user_facts else "- None"
-    system_prompt = SYSTEM_PROMPT_TEMPLATE.format(user_facts_block=facts_block)
+    system_prompt = _get_system_prompt(user_facts)
 
     full_messages = [SystemMessage(content=system_prompt)] + list(state["messages"])
     llm = get_resilient_llm(temperature=0.1)

@@ -1,0 +1,42 @@
+{
+  "thread_id": "599bfadd-0c1b-4cb3-b631-c8839a99adc0",
+  "user_id": "user_default",
+  "title": "What is the weather in Hyderab",
+  "messages": [
+    {
+      "role": "system",
+      "content": "Session initialized: What is the weather in Hyderab",
+      "created_at": "2026-08-06T07:19:08.349760"
+    },
+    {
+      "role": "user",
+      "content": "What is the weather in Hyderabad?",
+      "created_at": "2026-08-06T07:19:08.360245"
+    },
+    {
+      "role": "assistant",
+      "content": "The current weather in Hyderabad is quite stormy, with a thunderstorm occurring. The temperature is around 29.4°C, but it feels warmer at 33.4°C due to humidity levels at 64%. There's been a little precipitation of 0.4mm, and the wind is blowing at a speed of 12.3 km/h. If you have any plans outdoors, it might be a good idea to stay updated on the weather conditions!",
+      "created_at": "2026-08-06T07:19:15.552388"
+    },
+    {
+      "role": "user",
+      "content": "If John buys 4 shirts at $24.50 each and a pair of shoes for $89.99, and pays an 8% tax, what is the total cost?",
+      "created_at": "2026-08-06T07:19:23.086635"
+    },
+    {
+      "role": "assistant",
+      "content": "To calculate the total cost for John's purchase:\n\n1. The cost of 4 shirts at $24.50 each is \\(4 \\times 24.50 = 98.00\\).\n2. The cost of the pair of shoes is $89.99.\n3. Adding these together gives \\(98.00 + 89.99 = 187.99\\).\n4. Now, applying the 8% tax: \\(187.99 \\times 1.08 = 203.03\\).\n\nSo, the total cost, including tax, is approximately **$203.03**.",
+      "created_at": "2026-08-06T07:19:28.054523"
+    },
+    {
+      "role": "user",
+      "content": "what is the current USD price vs rs",
+      "created_at": "2026-08-06T07:19:53.902207"
+    },
+    {
+      "role": "assistant",
+      "content": "The current exchange rate is approximately **1 USD = 95.19 INR**. Keep in mind that exchange rates can fluctuate, so it's always a good idea to check for the most up-to-date rates if you're planning a transaction.",
+      "created_at": "2026-08-06T07:20:06.753013"
+    }
+  ]
+}
