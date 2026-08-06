@@ -1,0 +1,32 @@
+{
+  "thread_id": "fca34b72-f15c-4ef1-8e83-caaf19601031",
+  "user_id": "krishna",
+  "title": "What is the weather in Hyderab",
+  "messages": [
+    {
+      "role": "system",
+      "content": "Session initialized: What is the weather in Hyderab",
+      "created_at": "2026-08-06T07:29:10.668844"
+    },
+    {
+      "role": "user",
+      "content": "What is the weather in Hyderabad?",
+      "created_at": "2026-08-06T07:29:10.677647"
+    },
+    {
+      "role": "assistant",
+      "content": "The current weather in Hyderabad is as follows:\n\n- **Condition:** Thunderstorm\n- **Temperature:** 29.4°C (Feels like 33.4°C)\n- **Humidity:** 64%\n- **Precipitation:** 0.4 mm\n- **Wind Speed:** 12.3 km/h\n\nStay safe and dry if you're heading out!",
+      "created_at": "2026-08-06T07:29:16.237995"
+    },
+    {
+      "role": "user",
+      "content": "hi",
+      "created_at": "2026-08-06T08:10:01.043045"
+    },
+    {
+      "role": "assistant",
+      "content": "Hello! How are you today?",
+      "created_at": "2026-08-06T08:10:03.372624"
+    }
+  ]
+}

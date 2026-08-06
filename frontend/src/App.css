@@ -633,6 +633,57 @@
   margin: 0.75rem 0;
 }
 
+/* Action Bar (Copy, Feedback, Retry) */
+.action-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.75rem;
+  padding-top: 0.35rem;
+}
+
+.action-btn {
+  background: transparent;
+  color: var(--text-muted);
+  border-radius: 6px;
+  padding: 0.3rem 0.5rem;
+  font-size: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  transition: all 0.15s ease;
+}
+
+.action-btn:hover {
+  background-color: var(--bg-card);
+  color: var(--text-main);
+}
+
+.action-btn.active-mint {
+  color: var(--mint-primary);
+  background-color: rgba(20, 231, 157, 0.1);
+}
+
+.action-btn.active-red {
+  color: #FF5A5A;
+  background-color: rgba(255, 90, 90, 0.1);
+}
+
+.action-label {
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
 .chat-footer-input {
   padding: 1.5rem 15%;
   display: flex;

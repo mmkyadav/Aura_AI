@@ -47,6 +47,19 @@ class ApproveToolRequest(BaseModel):
     approved: bool
 
 
+# Feedback Schema
+class FeedbackRequest(BaseModel):
+    message_index: int = Field(default=0, description="Index or position of the message being rated")
+    rating: str = Field(..., description="Rating: 'thumbs_up' or 'thumbs_down'")
+    feedback_text: str = Field(default="", description="Optional comment or feedback text")
+
+
+class FeedbackResponse(BaseModel):
+    status: str
+    thread_id: str
+    rating: str
+
+
 # Memory Schemas
 class UserMemoryItem(BaseModel):
     id: str

@@ -1,0 +1,22 @@
+{
+  "thread_id": "c0df92c0-2772-4602-947e-24640c7f3a1b",
+  "user_id": "krishna",
+  "title": "What is Rajinikanth's latest m",
+  "messages": [
+    {
+      "role": "system",
+      "content": "Session initialized: What is Rajinikanth's latest m",
+      "created_at": "2026-08-06T07:28:29.167442"
+    },
+    {
+      "role": "user",
+      "content": "What is Rajinikanth's latest movie?",
+      "created_at": "2026-08-06T07:28:29.217806"
+    },
+    {
+      "role": "assistant",
+      "content": "Rajinikanth's latest movie is **\"Jailer 2,\"** which was officially announced to release on **June 12, 2026**. However, there are reports that its release may be pushed to **September 4, 2026**. This film is highly anticipated and will be available in Tamil, Telugu, and Hindi.",
+      "created_at": "2026-08-06T07:28:38.362491"
+    }
+  ]
+}

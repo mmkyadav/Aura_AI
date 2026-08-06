@@ -83,6 +83,19 @@ async def init_db() -> None:
                 CREATE INDEX IF NOT EXISTS idx_thread_messages_thread_id ON thread_messages(thread_id);
             """)
 
+            # 6. Table: message_feedback (User Thumbs Up / Thumbs Down Ratings & Comments)
+            await cur.execute("""
+                CREATE TABLE IF NOT EXISTS message_feedback (
+                    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                    thread_id VARCHAR(255) NOT NULL,
+                    user_id VARCHAR(255) NOT NULL,
+                    message_index INT DEFAULT 0,
+                    rating VARCHAR(50) NOT NULL,
+                    feedback_text TEXT DEFAULT '',
+                    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+                );
+            """)
+
             await conn.commit()
             logger.info("Database schema and pgvector extension initialized successfully.")
 

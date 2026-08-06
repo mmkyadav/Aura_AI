@@ -7,7 +7,12 @@ import {
   Pencil, 
   LogOut, 
   ArrowRight,
-  Globe
+  Globe,
+  Copy,
+  Check,
+  ThumbsUp,
+  ThumbsDown,
+  RotateCcw
 } from 'lucide-react';
 import './App.css';
 
@@ -31,6 +36,81 @@ const FormattedMessage = ({ content }) => {
   return (
     <div className="markdown-content">
       <ReactMarkdown>{cleaned}</ReactMarkdown>
+    </div>
+  );
+};
+
+// ChatGPT-Style Action Bar (Copy, Feedback, Retry) for Assistant responses
+const AssistantActionBar = ({ content, messageIndex, userId, threadId, onRetry, isLatest, isLoading }) => {
+  const [copied, setCopied] = useState(false);
+  const [rating, setRating] = useState(null); // 'thumbs_up' | 'thumbs_down' | null
+
+  const handleCopy = () => {
+    if (content) {
+      navigator.clipboard.writeText(content);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const handleFeedback = async (selectedRating) => {
+    const newRating = rating === selectedRating ? null : selectedRating;
+    setRating(newRating);
+
+    if (newRating && userId && threadId) {
+      try {
+        await fetch(`${API_BASE}/users/${userId}/threads/${threadId}/feedback`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message_index: messageIndex,
+            rating: newRating,
+          }),
+        });
+      } catch (err) {
+        console.warn('Feedback API note:', err);
+      }
+    }
+  };
+
+  return (
+    <div className="action-bar font-sans">
+      <button 
+        className={`action-btn ${copied ? 'active-mint' : ''}`} 
+        onClick={handleCopy} 
+        title={copied ? "Copied!" : "Copy response"}
+      >
+        {copied ? <Check size={14} /> : <Copy size={14} />}
+        {copied && <span className="action-label">Copied</span>}
+      </button>
+
+      <button 
+        className={`action-btn ${rating === 'thumbs_up' ? 'active-mint' : ''}`} 
+        onClick={() => handleFeedback('thumbs_up')} 
+        title="Good response"
+      >
+        <ThumbsUp size={14} />
+      </button>
+
+      <button 
+        className={`action-btn ${rating === 'thumbs_down' ? 'active-red' : ''}`} 
+        onClick={() => handleFeedback('thumbs_down')} 
+        title="Poor response"
+      >
+        <ThumbsDown size={14} />
+      </button>
+
+      {onRetry && (
+        <button 
+          className="action-btn retry-btn" 
+          onClick={onRetry} 
+          disabled={isLoading}
+          title="Regenerate response"
+        >
+          <RotateCcw size={14} className={isLoading ? "spin" : ""} />
+          <span className="action-label">Retry</span>
+        </button>
+      )}
     </div>
   );
 };
@@ -192,6 +272,25 @@ export default function App() {
       ]);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // ── Retry / Regenerate Response Handler ──────────────────────────────────────
+  const handleRetryMessage = (assistantIdx) => {
+    if (isLoading) return;
+    // Find previous user query
+    let userQuery = '';
+    for (let i = assistantIdx - 1; i >= 0; i--) {
+      if (messages[i].role === 'user') {
+        userQuery = messages[i].content;
+        break;
+      }
+    }
+
+    if (userQuery) {
+      // Remove assistant message and trigger re-generation
+      setMessages((prev) => prev.filter((_, idx) => idx !== assistantIdx));
+      handleSendMessage(userQuery);
     }
   };
 
@@ -437,6 +536,15 @@ export default function App() {
                       </div>
                       <div className="message-text-assistant">
                         <FormattedMessage content={m.content} />
+                        <AssistantActionBar 
+                          content={m.content}
+                          messageIndex={idx}
+                          userId={userId}
+                          threadId={activeThreadId}
+                          onRetry={() => handleRetryMessage(idx)}
+                          isLatest={idx === messages.length - 1}
+                          isLoading={isLoading}
+                        />
                       </div>
                     </>
                   )}

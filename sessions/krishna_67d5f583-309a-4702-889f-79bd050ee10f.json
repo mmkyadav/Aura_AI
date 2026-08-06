@@ -1,0 +1,22 @@
+{
+  "thread_id": "67d5f583-309a-4702-889f-79bd050ee10f",
+  "user_id": "krishna",
+  "title": "What is today's date?",
+  "messages": [
+    {
+      "role": "system",
+      "content": "Session initialized: What is today's date?",
+      "created_at": "2026-08-06T07:29:04.379385"
+    },
+    {
+      "role": "user",
+      "content": "What is today's date?",
+      "created_at": "2026-08-06T07:29:04.394300"
+    },
+    {
+      "role": "assistant",
+      "content": "Today's date is August 6, 2026.",
+      "created_at": "2026-08-06T07:29:05.807883"
+    }
+  ]
+}

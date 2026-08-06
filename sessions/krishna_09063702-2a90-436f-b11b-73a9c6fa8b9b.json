@@ -1,0 +1,22 @@
+{
+  "thread_id": "09063702-2a90-436f-b11b-73a9c6fa8b9b",
+  "user_id": "krishna",
+  "title": "who am i?",
+  "messages": [
+    {
+      "role": "system",
+      "content": "Session initialized: who am i?",
+      "created_at": "2026-08-06T07:30:36.020921"
+    },
+    {
+      "role": "user",
+      "content": "who am i?",
+      "created_at": "2026-08-06T07:30:36.034292"
+    },
+    {
+      "role": "assistant",
+      "content": "I don't have any specific personal information about you yet. If you'd like to share something about yourself or ask a specific question, I'm here to listen and help!",
+      "created_at": "2026-08-06T07:30:37.397938"
+    }
+  ]
+}

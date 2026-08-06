@@ -19,6 +19,8 @@ from aura.api.schemas import (
     MessageRequest,
     MessageResponse,
     ToolCallDetail,
+    FeedbackRequest,
+    FeedbackResponse,
 )
 from aura.core.graph import aura_graph
 from aura.db import pool
@@ -298,3 +300,29 @@ async def send_message(
             tool_calls=[],
             cached=False,
         )
+
+
+@router.post("/users/{user_id}/threads/{thread_id}/feedback")
+async def record_feedback(
+    user_id: str,
+    thread_id: str,
+    req: FeedbackRequest,
+):
+    """Record user feedback (thumbs up / thumbs down) for a specific assistant response."""
+    if pool:
+        try:
+            async with pool.connection() as conn:
+                async with conn.cursor() as cur:
+                    await cur.execute(
+                        """
+                        INSERT INTO message_feedback (thread_id, user_id, message_index, rating, feedback_text)
+                        VALUES (%s, %s, %s, %s, %s);
+                        """,
+                        (thread_id, user_id, req.message_index, req.rating, req.feedback_text)
+                    )
+                    await conn.commit()
+        except Exception as e:
+            logger.warning("Failed to store feedback in DB: %s", e)
+
+    logger.info("Feedback recorded for user %s thread %s: %s", user_id, thread_id, req.rating)
+    return FeedbackResponse(status="success", thread_id=thread_id, rating=req.rating)
