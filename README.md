@@ -18,7 +18,7 @@ An intelligent, context-aware AI companion built with **FastAPI**, **LangGraph**
 
 ### 2. 🛡️ Resilient Multi-Provider LLM Chain
 - **Automatic Fallback Hierarchy**: Routes all requests through OpenRouter with unified tool bindings across all models:
-  $$\text{Primary: } \texttt{openai/gpt-4o-mini} \longrightarrow \text{Fallback 1: } \texttt{deepseek/deepseek-chat} \longrightarrow \text{Fallback 2: } \texttt{meta-llama/llama-3.3-70b-instruct}$$
+  $$\text{Primary: } \texttt{meta-llama/llama-3.3-70b-instruct} \longrightarrow \text{Fallback 1: } \texttt{openai/gpt-4o-mini} \longrightarrow \text{Fallback 2: } \texttt{deepseek/deepseek-chat}$$
 - **Tool-Bound Resilience**: Tools are bound to both primary and fallback models before assembling fallbacks, ensuring zero tool loss during failovers.
 - **Safe Token Management**: Configured token bounds (`max_tokens=2048`) to prevent credit threshold rejection errors.
 
@@ -124,9 +124,9 @@ OPENROUTER_API_KEY=your_openrouter_api_key_here
 SERPAPI_API_KEY=your_serpapi_key_here
 
 # Model Resiliency Chain
-PRIMARY_MODEL=openai/gpt-4o-mini
-FALLBACK_MODEL=deepseek/deepseek-chat
-RETRY_MODEL=meta-llama/llama-3.3-70b-instruct
+PRIMARY_MODEL=meta-llama/llama-3.3-70b-instruct
+FALLBACK_MODEL=openai/gpt-4o-mini
+RETRY_MODEL=deepseek/deepseek-chat
 ```
 
 ---
