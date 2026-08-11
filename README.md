@@ -50,7 +50,7 @@ Aura/
 │   ├── core/            # LangGraph state nodes, resilient LLM factory, and state graph
 │   ├── memory/          # Semantic cache, store, and fact extraction
 │   └── tools/           # Core tool functions (calculator, weather, search)
-├── mcp/
+├── aura_mcp/
 │   ├── mcp_server.py    # FastMCP server registering aura tools
 │   └── mcp_client.py    # MCP client runner & execution wrapper
 ├── frontend/
@@ -107,7 +107,7 @@ RETRY_MODEL=deepseek/deepseek-chat
 You can test the FastMCP Server and Client independently to verify tool execution over Stdio:
 
 ```bash
-python mcp/mcp_client.py
+python aura_mcp/mcp_client.py
 ```
 
 *Output:*
