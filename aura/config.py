@@ -25,8 +25,8 @@ class Settings(BaseSettings):
 
     # LLM Settings (OpenRouter model identifiers)
     PRIMARY_MODEL: str = "openai/gpt-4o-mini"
-    FALLBACK_MODEL: str = "google/gemini-2.5-flash"
-    RETRY_MODEL: str = "deepseek/deepseek-chat"
+    FALLBACK_MODEL: str = "deepseek/deepseek-chat"
+    RETRY_MODEL: str = "meta-llama/llama-3.3-70b-instruct"
 
     # Optional alias mappings for legacy fallback fields
     FALLBACK_MODEL_1: str = ""

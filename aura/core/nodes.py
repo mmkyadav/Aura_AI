@@ -80,9 +80,8 @@ async def router_node(state: AuraState) -> dict:
 
     full_messages = [SystemMessage(content=system_prompt)] + list(state["messages"])
 
-    llm = get_resilient_llm(temperature=0.1)
     tools = get_all_tools()
-    llm_with_tools = llm.bind_tools(tools)
+    llm_with_tools = get_resilient_llm(temperature=0.1, tools=tools)
 
     try:
         response = await llm_with_tools.ainvoke(full_messages)
