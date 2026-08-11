@@ -559,15 +559,20 @@ export default function App() {
                         <span>AURA</span>
                         {m.tool_calls && m.tool_calls.length > 0 && (
                           <div className="tool-call-banner">
-                            {m.tool_calls.map((tc, tcIdx) => (
-                              <div key={tcIdx} className="tool-call-chip">
-                                <span className="tool-chip-icon">⚡</span>
-                                <span className="tool-chip-name">{tc.name}</span>
-                                <span className={`tool-chip-protocol ${tc.via_mcp !== false ? 'mcp' : 'local'}`}>
-                                  {tc.via_mcp !== false ? 'via FastMCP' : 'via Local'}
-                                </span>
-                              </div>
-                            ))}
+                            {m.tool_calls.map((tc, tcIdx) => {
+                              const name = tc.name || 'tool';
+                              const args = tc.args ? Object.values(tc.args).map(v => typeof v === 'object' ? JSON.stringify(v) : String(v)).join(', ') : '';
+                              const label = args ? `${name}("${args}")` : name;
+                              return (
+                                <div key={tcIdx} className="tool-call-chip" title={`Executed: ${name} with args ${JSON.stringify(tc.args || {})}`}>
+                                  <span className="tool-chip-icon">⚡</span>
+                                  <span className="tool-chip-name">{label}</span>
+                                  <span className={`tool-chip-protocol ${tc.via_mcp !== false ? 'mcp' : 'local'}`}>
+                                    {tc.via_mcp !== false ? 'via FastMCP' : 'via Local'}
+                                  </span>
+                                </div>
+                              );
+                            })}
                           </div>
                         )}
                       </div>

@@ -38,7 +38,7 @@ def _get_fallback_file(user_id: str, thread_id: str) -> str:
     return os.path.join(SESSIONS_DIR, f"{user_id}_{thread_id}.json")
 
 
-def _save_fallback_message(user_id: str, thread_id: str, role: str, content: str, title: str = "New Chat"):
+def _save_fallback_message(user_id: str, thread_id: str, role: str, content: str, title: str = "New Chat", tool_calls: list = None):
     file_path = _get_fallback_file(user_id, thread_id)
     data = {"thread_id": thread_id, "user_id": user_id, "title": title, "messages": []}
     if os.path.exists(file_path):
@@ -48,11 +48,15 @@ def _save_fallback_message(user_id: str, thread_id: str, role: str, content: str
         except Exception:
             pass
 
-    data["messages"].append({
+    msg_obj = {
         "role": role,
         "content": content,
         "created_at": datetime.utcnow().isoformat()
-    })
+    }
+    if tool_calls:
+        msg_obj["tool_calls"] = tool_calls
+
+    data["messages"].append(msg_obj)
     try:
         with open(file_path, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
@@ -178,7 +182,16 @@ async def get_thread_messages(user_id: str, thread_id: str):
         try:
             with open(fpath, "r", encoding="utf-8") as f:
                 sdata = json.load(f)
-                filtered = [m for m in sdata.get("messages", []) if m.get("role") in ("user", "assistant")]
+                filtered = [
+                    {
+                        "role": m.get("role"),
+                        "content": m.get("content"),
+                        "tool_calls": m.get("tool_calls", []),
+                        "created_at": m.get("created_at")
+                    }
+                    for m in sdata.get("messages", [])
+                    if m.get("role") in ("user", "assistant")
+                ]
                 return filtered
         except Exception:
             pass
@@ -252,20 +265,24 @@ async def send_message(
                 if isinstance(art, dict) and "via_mcp" in art:
                     mcp_map[msg.tool_call_id] = art["via_mcp"]
 
-        for msg in reversed(messages):
-            if isinstance(msg, AIMessage):
-                assistant_reply = str(msg.content)
-                if msg.tool_calls:
-                    for tc in msg.tool_calls:
-                        tc_id = tc.get("id", "")
-                        tool_calls_list.append(
-                            ToolCallDetail(
-                                id=tc_id,
-                                name=tc.get("name", ""),
-                                args=tc.get("args", {}),
-                                via_mcp=mcp_map.get(tc_id, True),
-                            )
+        # Collect ALL tool calls requested during this graph turn
+        for msg in messages:
+            if isinstance(msg, AIMessage) and msg.tool_calls:
+                for tc in msg.tool_calls:
+                    tc_id = tc.get("id", "")
+                    tool_calls_list.append(
+                        ToolCallDetail(
+                            id=tc_id,
+                            name=tc.get("name", ""),
+                            args=tc.get("args", {}),
+                            via_mcp=mcp_map.get(tc_id, True),
                         )
+                    )
+
+        # Extract final assistant reply content from the last non-empty AIMessage
+        for msg in reversed(messages):
+            if isinstance(msg, AIMessage) and msg.content:
+                assistant_reply = str(msg.content)
                 break
 
         # Save assistant message to persistent DB and local file
@@ -280,7 +297,9 @@ async def send_message(
                         await conn.commit()
             except Exception:
                 pass
-        _save_fallback_message(user_id, thread_id, "assistant", assistant_reply)
+
+        tool_calls_dicts = [tc.model_dump() for tc in tool_calls_list] if tool_calls_list else []
+        _save_fallback_message(user_id, thread_id, "assistant", assistant_reply, tool_calls=tool_calls_dicts)
 
         # Asynchronously extract long-term user memories in the background
         background_tasks.add_task(
