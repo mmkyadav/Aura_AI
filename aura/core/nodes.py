@@ -141,9 +141,21 @@ async def tool_execution_node(state: AuraState) -> dict:
 async def synthesizer_node(state: AuraState) -> dict:
     """Node 5: Synthesize raw tool outputs into a natural language assistant reply."""
     user_facts = state.get("user_memories", [])
-    system_prompt = _get_system_prompt(user_facts)
+    base_prompt = _get_system_prompt(user_facts)
 
-    full_messages = [SystemMessage(content=system_prompt)] + list(state["messages"])
+    has_tools = any(isinstance(m, ToolMessage) for m in state.get("messages", []))
+    if has_tools:
+        synthesis_prompt = (
+            base_prompt +
+            "\n\nCRITICAL INSTRUCTION FOR TOOL RESPONSE SYNTHESIS:\n"
+            "The tools HAVE ALREADY BEEN EXECUTED and their outputs are present in the ToolMessages above. "
+            "Your sole job now is to synthesize and present all data, weather metrics, math results, or search facts from the ToolMessages directly to the user in clean, friendly Markdown. "
+            "Do NOT say 'I will look up the information' or ask to look up data again — present the retrieved ToolMessage results directly."
+        )
+    else:
+        synthesis_prompt = base_prompt
+
+    full_messages = [SystemMessage(content=synthesis_prompt)] + list(state["messages"])
     llm = get_resilient_llm(temperature=0.1)
 
     try:
