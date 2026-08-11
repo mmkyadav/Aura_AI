@@ -729,3 +729,58 @@
   display: flex;
   justify-content: center;
 }
+
+/* -------------------------------------------------------------------------- */
+/* MCP TOOL CALL BADGES & CHIPS                                              */
+/* -------------------------------------------------------------------------- */
+.tool-call-banner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-left: 0.5rem;
+}
+
+.tool-call-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: rgba(14, 46, 60, 0.6);
+  border: 1px solid rgba(20, 231, 157, 0.2);
+  border-radius: 12px;
+  padding: 0.15rem 0.5rem;
+  font-size: 0.7rem;
+  font-family: inherit;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.tool-chip-icon {
+  font-size: 0.7rem;
+}
+
+.tool-chip-name {
+  color: var(--text-main);
+  font-weight: 600;
+}
+
+.tool-chip-protocol {
+  font-size: 0.65rem;
+  padding: 0.08rem 0.4rem;
+  border-radius: 8px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.tool-chip-protocol.mcp {
+  background: rgba(20, 231, 157, 0.15);
+  color: #14E79D;
+  border: 1px solid rgba(20, 231, 157, 0.3);
+}
+
+.tool-chip-protocol.local {
+  background: rgba(100, 116, 139, 0.2);
+  color: #94A3B8;
+  border: 1px solid rgba(100, 116, 139, 0.3);
+}
+

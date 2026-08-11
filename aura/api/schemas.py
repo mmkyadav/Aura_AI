@@ -30,6 +30,7 @@ class ToolCallDetail(BaseModel):
     id: str
     name: str
     args: dict[str, Any]
+    via_mcp: bool = Field(default=True, description="Whether tool was executed via Model Context Protocol (MCP)")
 
 
 class MessageResponse(BaseModel):

@@ -90,12 +90,14 @@ async def router_node(state: AuraState) -> dict:
 
 
 async def tool_execution_node(state: AuraState) -> dict:
-    """Node 4: Execute requested tools and append ToolMessage outputs."""
+    """Node 4: Execute requested tools via MCP and append ToolMessage outputs."""
     messages = state.get("messages", [])
     last_msg = messages[-1] if messages else None
 
     if not isinstance(last_msg, AIMessage) or not last_msg.tool_calls:
         return {}
+
+    from mcp.mcp_client import execute_tool_via_mcp_sync
 
     tool_outputs = []
     for tc in last_msg.tool_calls:
@@ -103,18 +105,32 @@ async def tool_execution_node(state: AuraState) -> dict:
         tool_args = tc.get("args", {})
         tool_id = tc.get("id")
 
-        tool_fn = TOOL_REGISTRY.get(tool_name)
-        if tool_fn:
-            try:
-                result = tool_fn.invoke(tool_args) if hasattr(tool_fn, "invoke") else tool_fn(**tool_args)
-                result_str = str(result)
-            except Exception as e:
-                logger.error("Tool '%s' execution error: %s", tool_name, e)
-                result_str = f"Error executing tool '{tool_name}': {e}"
-        else:
-            result_str = f"Error: Unknown tool '{tool_name}'."
+        via_mcp = True
+        try:
+            # Execute tool via FastMCP server integration
+            result_str = execute_tool_via_mcp_sync(tool_name, tool_args)
+        except Exception as mcp_err:
+            logger.warning("MCP execution fallback for '%s': %s", tool_name, mcp_err)
+            via_mcp = False
+            tool_fn = TOOL_REGISTRY.get(tool_name)
+            if tool_fn:
+                try:
+                    result = tool_fn.invoke(tool_args) if hasattr(tool_fn, "invoke") else tool_fn(**tool_args)
+                    result_str = str(result)
+                except Exception as e:
+                    logger.error("Tool '%s' execution error: %s", tool_name, e)
+                    result_str = f"Error executing tool '{tool_name}': {e}"
+            else:
+                result_str = f"Error: Unknown tool '{tool_name}'."
 
-        tool_outputs.append(ToolMessage(content=result_str, tool_call_id=tool_id, name=tool_name))
+        tool_outputs.append(
+            ToolMessage(
+                content=result_str,
+                tool_call_id=tool_id,
+                name=tool_name,
+                artifact={"via_mcp": via_mcp}
+            )
+        )
 
     return {"messages": tool_outputs}
 

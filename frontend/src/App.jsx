@@ -273,7 +273,11 @@ export default function App() {
         const data = await msgRes.json();
         setMessages((prev) => [
           ...prev,
-          { role: 'assistant', content: data.content || 'Response generated.' }
+          { 
+            role: 'assistant', 
+            content: data.content || 'Response generated.',
+            tool_calls: data.tool_calls || []
+          }
         ]);
         fetchThreads(); // Refresh thread list in sidebar
       } else {
@@ -553,6 +557,19 @@ export default function App() {
                       <div className="assistant-header">
                         <span className="assistant-dash">—</span>
                         <span>AURA</span>
+                        {m.tool_calls && m.tool_calls.length > 0 && (
+                          <div className="tool-call-banner">
+                            {m.tool_calls.map((tc, tcIdx) => (
+                              <div key={tcIdx} className="tool-call-chip">
+                                <span className="tool-chip-icon">⚡</span>
+                                <span className="tool-chip-name">{tc.name}</span>
+                                <span className={`tool-chip-protocol ${tc.via_mcp !== false ? 'mcp' : 'local'}`}>
+                                  {tc.via_mcp !== false ? 'via FastMCP' : 'via Local'}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                       <div className="message-text-assistant">
                         <FormattedMessage content={m.content} />
