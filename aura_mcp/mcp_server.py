@@ -28,7 +28,7 @@ def calculate(expression: str) -> str:
 @mcp.tool()
 def fetch_weather(location: str = "") -> str:
     """
-    Fetch current weather report for a given city or location string (e.g. 'Hyderabad', 'Tokyo').
+    Fetch current weather report for one or multiple cities or location strings (e.g. 'Hyderabad', 'Goa and Maredumilli').
     """
     return weather_tool.invoke({"location": location})
 
@@ -44,4 +44,3 @@ def google_search(query: str) -> str:
 if __name__ == "__main__":
     # Runs the MCP server over stdio (standard input/output stream)
     mcp.run(transport="stdio")
-

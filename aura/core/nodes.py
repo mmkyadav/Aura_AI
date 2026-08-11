@@ -101,7 +101,7 @@ async def tool_execution_node(state: AuraState) -> dict:
     if not isinstance(last_msg, AIMessage) or not last_msg.tool_calls:
         return {}
 
-    from mcp.mcp_client import execute_tool_via_mcp_sync
+    from aura_mcp.mcp_client import execute_tool_via_mcp_sync
 
     tool_outputs = []
     for tc in last_msg.tool_calls:

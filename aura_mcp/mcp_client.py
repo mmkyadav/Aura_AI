@@ -66,7 +66,7 @@ async def main():
 
             # Example 2: Execute Weather Tool
             print("\n--- Testing Weather Tool via MCP ---")
-            weather_result = await session.call_tool("fetch_weather", arguments={"location": "Tokyo"})
+            weather_result = await session.call_tool("fetch_weather", arguments={"location": "Goa and Maredumilli"})
             print("Output:", weather_result.content[0].text)
 
             # Example 3: Execute Search Tool
@@ -77,4 +77,3 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
-
