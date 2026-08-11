@@ -25,7 +25,7 @@ Contextual Information:
 
 Tool Usage & Live Data Policy (CRITICAL):
 1. LIVE DATA & RECENT EVENTS: For ANY query asking about current, live, or recent events (e.g., latest movies, new releases, current news, sports updates, breaking updates, or queries about today's date), you MUST invoke the `google_search` tool to retrieve accurate live information. Do NOT attempt to answer from static pre-trained memory.
-2. WEATHER LOOKUPS: Use `fetch_weather` (or `weather`) tool whenever the user asks for current weather conditions.
+2. WEATHER LOOKUPS: Use `fetch_weather` (or `weather`) tool whenever the user asks for current weather conditions, climate, temperature, or weather of any city/location (e.g., 'Goa', 'Maredumilli', 'Tokyo'). If the user provides a follow-up answer listing cities/locations for weather (e.g., "yes Goa and Maredumilli"), you MUST invoke `fetch_weather` with those locations.
 3. MATHEMATICAL CALCULATIONS: Use the `calculate` tool for non-trivial math operations. Format mathematical steps cleanly using standard Markdown / math text without raw LaTeX delimiters like `\\(` or `\\[`.
 4. CONVERSATIONAL CONTEXT: Refer to previous messages naturally.
 5. AMBIGUITY: If a user request is missing key information, ask a friendly clarification question.
@@ -47,7 +47,11 @@ async def cache_check_node(state: AuraState) -> dict:
 
     last_msg = messages[-1]
     if isinstance(last_msg, HumanMessage):
-        query_text = str(last_msg.content).strip()
+        query_text = str(last_msg.content).strip().lower()
+        # Bypass cache for weather, live search, calculations, and location follow-ups
+        if any(kw in query_text for kw in ("weather", "temp", "temperature", "forecast", "rain", "climate", "calculate", "math", "news", "search", "latest", "today", "goa", "maredumilli")):
+            return {"cached_response": None}
+
         cached = await get_cached_response(query_text)
         if cached:
             return {"cached_response": cached}
@@ -146,8 +150,9 @@ async def synthesizer_node(state: AuraState) -> dict:
     try:
         response = await llm.ainvoke(full_messages)
         
-        # Save to semantic cache if initial query was generic
-        if len(state["messages"]) >= 2 and isinstance(state["messages"][0], HumanMessage):
+        # Save to semantic cache only if response did NOT involve tool executions
+        has_tools = any(isinstance(m, ToolMessage) for m in state.get("messages", []))
+        if not has_tools and len(state["messages"]) >= 2 and isinstance(state["messages"][0], HumanMessage):
             query = str(state["messages"][0].content)
             await store_cached_response(query, str(response.content))
 
