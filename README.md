@@ -1,24 +1,43 @@
 # ⚡ Aura AI Companion
 
-A modern, intelligent, and context-aware AI companion built with **FastAPI**, **LangGraph**, **FastMCP (Model Context Protocol)**, and a glassmorphic **React (Vite)** web client.
+An intelligent, context-aware AI companion built with **FastAPI**, **LangGraph**, **FastMCP (Model Context Protocol)**, and a glassmorphic **React (Vite)** web workspace.
 
-![Aura UI](https://img.shields.io/badge/Aura-AI%20Assistant-14E79D?style=for-the-badge)
+![Aura AI](https://img.shields.io/badge/Aura-AI%20Assistant-14E79D?style=for-the-badge)
 ![FastMCP](https://img.shields.io/badge/FastMCP-3.4-blue?style=for-the-badge)
+![LangGraph](https://img.shields.io/badge/LangGraph-State%20Machine-orange?style=for-the-badge)
 ![React](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.110-009688?style=for-the-badge)
 
 ---
 
-## ✨ Key Features
+## 🌟 Features Overview
 
-- **⚡ FastMCP Integration**: Tools are registered and executed using Anthropic/Standard Intelligence's **FastMCP** (Model Context Protocol) over stdio.
-- **🛠️ Integrated Tool Suite**:
-  - **Calculator**: Arithmetic & SymPy algebraic equation solver (e.g. `(10 - 4) / 2` or `20 - (x + x + 6) = 0`).
-  - **Weather Lookup**: Live weather forecasts and conditions powered by Open-Meteo API.
-  - **Google Web Search**: Real-time web news, facts, and live updates using SerpAPI.
-- **🧠 Resilient Agent Workflow**: Powered by **LangGraph** state machine with automatic LLM fallback routing across OpenRouter models.
-- **💾 Long-Term Memory & Semantic Cache**: Asynchronous pgvector memory store and semantic response caching.
-- **🎨 Glassmorphic Dark-Mode UI**: Sleek React interface displaying real-time tool invocation chips (`⚡ tool_name("args") via FastMCP`).
+### 1. ⚡ Model Context Protocol (MCP) Integration
+- Built with **FastMCP** (`aura_mcp/`) exposing local functions as standard MCP tools over Stdio.
+- Decoupled server/client execution pipeline allowing external MCP clients (Claude Desktop, custom agents, VSCode extensions) to connect seamlessly.
+
+### 2. 🛡️ Resilient Multi-Provider LLM Chain
+- **Automatic Fallback Hierarchy**: Routes all requests through OpenRouter with unified tool bindings across all models:
+  $$\text{Primary: } \texttt{openai/gpt-4o-mini} \longrightarrow \text{Fallback 1: } \texttt{deepseek/deepseek-chat} \longrightarrow \text{Fallback 2: } \texttt{meta-llama/llama-3.3-70b-instruct}$$
+- **Tool-Bound Resilience**: Tools are bound to both primary and fallback models before assembling fallbacks, ensuring zero tool loss during failovers.
+- **Safe Token Management**: Configured token bounds (`max_tokens=2048`) to prevent credit threshold rejection errors.
+
+### 3. 🛠️ Intelligent Tool Suite
+- 🧮 **Calculator Tool**: Evaluates arithmetic (`(100 - 25) / 5`) and solves single-variable algebraic equations using SymPy (`20 - (x + x + 6) = 0`).
+- 🌤️ **High-Precision Weather Tool**: 
+  - Dual-geocoding via **OpenStreetMap (Nominatim)** & Open-Meteo for 100% precision across cities, states (`Goa`), and small towns/villages (`Maredumilli`).
+  - Multi-location parsing (e.g. `"Goa and Maredumilli"`).
+- 🔍 **Google Search Tool**: Real-time live data, breaking news, and organic web results via SerpAPI.
+
+### 4. 🧠 Turn-Isolated Context & Memory
+- **Per-Turn Tool Scoping**: Filters tool execution history to the current message turn, preventing past tool badges from leaking into new responses.
+- **Smart Cache Bypass**: Dynamically bypasses static semantic response cache for real-time tool queries (`weather`, `search`, `calculate`).
+- **Long-Term Memory**: Automatic extraction and storage of long-term user facts and preferences.
+
+### 5. 🎨 Glassmorphic React Frontend
+- **Real-Time Badges**: Displays execution badges above AI responses (`⚡ fetch_weather("Goa, India") via FastMCP`).
+- **Response Action Bar**: One-click Copy, Thumbs Up/Down feedback, and instant "Try again" regeneration.
+- **Thread History**: Full chat thread management with persistent local and database history.
 
 ---
 
@@ -27,15 +46,21 @@ A modern, intelligent, and context-aware AI companion built with **FastAPI**, **
 ```mermaid
 flowchart TD
     User([User / React Client]) <-->|HTTP REST / SSE| FastAPI[FastAPI Backend Server]
-    FastAPI <-->|State Execution| LangGraph[LangGraph Agent Graph]
+    FastAPI <-->|State Execution| LangGraph[LangGraph State Machine]
+    
+    subgraph Resiliency ["OpenRouter Resilient LLM Gateway"]
+        Primary[openai/gpt-4o-mini] -->|Failover| FB1[deepseek/deepseek-chat]
+        FB1 -->|Failover| FB2[meta-llama/llama-3.3-70b-instruct]
+    end
     
     subgraph MCP ["Model Context Protocol (FastMCP Layer)"]
-        Client[MCP Client Runner] <-->|Stdio Stream| Server[FastMCP Server]
+        Client[aura_mcp Client Runner] <-->|Stdio Stream| Server[aura_mcp Server]
         Server --> CalcTool[Calculator Tool]
         Server --> WeatherTool[Weather Tool]
         Server --> SearchTool[Google Search Tool]
     end
     
+    LangGraph <-->|Prompt / Routing| Resiliency
     LangGraph <-->|Tool Execution| Client
 ```
 
@@ -46,39 +71,41 @@ flowchart TD
 ```
 Aura/
 ├── aura/
-│   ├── api/             # FastAPI routers and Pydantic schemas
-│   ├── core/            # LangGraph state nodes, resilient LLM factory, and state graph
-│   ├── memory/          # Semantic cache, store, and fact extraction
+│   ├── api/             # FastAPI endpoints, schemas, and router
+│   ├── core/            # LangGraph nodes, state graph, and resilient LLM factory
+│   ├── memory/          # Semantic cache, fact store, and memory extractor
 │   └── tools/           # Core tool functions (calculator, weather, search)
 ├── aura_mcp/
-│   ├── mcp_server.py    # FastMCP server registering aura tools
-│   └── mcp_client.py    # MCP client runner & execution wrapper
+│   ├── mcp_server.py    # FastMCP server registering aura tools over Stdio
+│   └── mcp_client.py    # FastMCP client runner and execution wrappers
 ├── frontend/
 │   ├── src/
-│   │   ├── App.jsx      # Main React workspace & tool chip badges
-│   │   ├── App.css      # Custom dark-mode glassmorphic styling
+│   │   ├── App.jsx      # React workspace, thread manager, and tool badge renderer
+│   │   ├── App.css      # Dark-mode glassmorphic design system
 │   │   └── main.jsx
 │   └── package.json
-├── main.py              # Backend entry point
+├── main.py              # FastAPI server entry point
 ├── requirements.txt     # Python dependencies
 └── README.md
 ```
 
 ---
 
-## 🚀 Quick Start & Setup
+## 🚀 Quick Start Guide
 
 ### Prerequisites
 - **Python 3.11+**
 - **Node.js 18+** & npm
-- **OpenRouter / OpenAI API Key** (and optional **SerpAPI Key**)
+- **OpenRouter API Key** (and optional **SerpAPI Key**)
 
 ### 1. Installation
 
-Clone the repository and install backend dependencies:
-
 ```bash
-# Install Python packages
+# Clone the repository
+git clone https://github.com/mmkyadav/Aura_AI.git
+cd Aura
+
+# Install Python backend dependencies
 pip install -r requirements.txt
 pip install fastmcp mcp
 
@@ -95,16 +122,18 @@ Create a `.env` file in the root directory:
 ```env
 OPENROUTER_API_KEY=your_openrouter_api_key_here
 SERPAPI_API_KEY=your_serpapi_key_here
+
+# Model Resiliency Chain
 PRIMARY_MODEL=openai/gpt-4o-mini
-FALLBACK_MODEL=google/gemini-2.5-flash
-RETRY_MODEL=deepseek/deepseek-chat
+FALLBACK_MODEL=deepseek/deepseek-chat
+RETRY_MODEL=meta-llama/llama-3.3-70b-instruct
 ```
 
 ---
 
 ## 🧪 Testing FastMCP Standalone
 
-You can test the FastMCP Server and Client independently to verify tool execution over Stdio:
+Test the FastMCP server and client independently over Stdio:
 
 ```bash
 python aura_mcp/mcp_client.py
@@ -114,32 +143,38 @@ python aura_mcp/mcp_client.py
 ```text
 Connecting to MCP Server...
 === Registered MCP Tools ===
-- calculate: Evaluate a mathematical expression.
-- fetch_weather: Fetch current weather report for location.
-- google_search: Search Google via SerpAPI.
+- calculate: Evaluate a mathematical expression or algebraic equation.
+- fetch_weather: Fetch current weather report for one or multiple locations.
+- google_search: Search Google via SerpAPI for real-time news.
 
---- Testing Calculator Tool via MCP ---
-Output: Result: x = 10
+--- Testing Weather Tool via MCP ---
+Output:
+Weather for Goa, India:
+- Condition: Overcast
+- Temperature: 28.6°C (Feels like 34.5°C)
+
+Weather for Maredumilli, India:
+- Condition: Moderate drizzle
+- Temperature: 30.7°C (Feels like 35.2°C)
 ```
 
 ---
 
-## 💻 Running the Application
+## 💻 Running the Full Application
 
-### 1. Start FastAPI Backend
-From the root directory (`e:\Aura`):
+### Step 1: Start FastAPI Backend
 ```bash
 python main.py
 ```
-*Backend API runs at `http://localhost:8000`.*
+*Backend API server runs at `http://localhost:8000`.*
 
-### 2. Start React Frontend
-In a separate terminal:
+### Step 2: Start React Frontend
+In a new terminal:
 ```bash
 cd frontend
 npm run dev
 ```
-*Frontend app runs at `http://localhost:5173`.*
+*Frontend workspace runs at `http://localhost:5173`.*
 
 ---
 
