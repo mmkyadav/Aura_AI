@@ -257,16 +257,24 @@ async def send_message(
         tool_calls_list = []
         is_cached = bool(final_state.get("cached_response"))
 
-        # Build mapping of tool execution status from ToolMessages
+        # Find index of the last HumanMessage to scope current turn messages
+        last_human_idx = 0
+        for idx, msg in enumerate(messages):
+            if isinstance(msg, HumanMessage):
+                last_human_idx = idx
+
+        current_turn_messages = messages[last_human_idx:]
+
+        # Build mapping of tool execution status from ToolMessages in CURRENT TURN
         mcp_map = {}
-        for msg in messages:
+        for msg in current_turn_messages:
             if hasattr(msg, "tool_call_id") and getattr(msg, "artifact", None):
                 art = getattr(msg, "artifact", {})
                 if isinstance(art, dict) and "via_mcp" in art:
                     mcp_map[msg.tool_call_id] = art["via_mcp"]
 
-        # Collect ALL tool calls requested during this graph turn
-        for msg in messages:
+        # Collect tool calls requested ONLY during the CURRENT TURN
+        for msg in current_turn_messages:
             if isinstance(msg, AIMessage) and msg.tool_calls:
                 for tc in msg.tool_calls:
                     tc_id = tc.get("id", "")
@@ -279,8 +287,8 @@ async def send_message(
                         )
                     )
 
-        # Extract final assistant reply content from the last non-empty AIMessage
-        for msg in reversed(messages):
+        # Extract final assistant reply content from the last non-empty AIMessage in CURRENT TURN
+        for msg in reversed(current_turn_messages):
             if isinstance(msg, AIMessage) and msg.content:
                 assistant_reply = str(msg.content)
                 break
